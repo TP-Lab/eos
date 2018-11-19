@@ -38,6 +38,7 @@ namespace eosio {
     using chain::signed_block;
     using chain::transaction_id_type;
     using chain::packed_transaction;
+    using chain::permission_level;
 
 static appbase::abstract_plugin& _kafka_plugin = app().register_plugin<kafka_plugin>();
 using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
@@ -88,6 +89,9 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
         void init();
 
         bool configured{false};
+
+        void filter_traction_trace(const chain::transaction_trace_ptr trace,action_name act_name);
+        void _process_trace(vector<chain::action_trace>::iterator  action_trace_ptr,action_name act_name);
 
         uint32_t start_block_num = 0;
         bool start_block_reached = false;
@@ -387,6 +391,67 @@ using kafka_producer_ptr = std::shared_ptr<class kafka_producer>;
                 ",\"trace\":" + fc::json::to_string(t.trace).c_str() + "}";
    producer->trx_kafka_sendmsg(KAFKA_TRX_APPLIED,(char*)transaction_metadata_json.c_str());
 
+    if(producer->trx_kafka_get_topic(KAFKA_TRX_TRANSFER) != NULL){
+        filter_traction_trace(t.trace,N(transfer));
+        if(t.trace->action_traces.size() > 0){
+            string transfer_json =
+                    "{\"block_number\":" + std::to_string(t.block_number) + ",\"block_time\":" + std::to_string(time) +
+                    ",\"trace\":" + fc::json::to_string(t.trace).c_str() +"}";
+            producer->trx_kafka_sendmsg(KAFKA_TRX_TRANSFER,(char*)transfer_json.c_str());
+            //elog("transfer_json = ${e}",("e",transfer_json));
+        }
+    }
+
+}
+
+void kafka_plugin_impl::_process_trace(vector<chain::action_trace>::iterator  action_trace_ptr,action_name act_name){
+
+    auto inline_trace_ptr = action_trace_ptr->inline_traces.begin();
+    for(;inline_trace_ptr!=action_trace_ptr->inline_traces.end();inline_trace_ptr++){
+        //elog("inline action:");
+        _process_trace(inline_trace_ptr,act_name);
+    }
+
+    if(action_trace_ptr->act.name == act_name){
+
+        //elog("act_name=${e}",("e",act_name));
+        chain_apis::read_only::abi_bin_to_json_params params = {
+                .code = action_trace_ptr->act.account,
+                .action = action_trace_ptr->act.name,
+                .binargs = action_trace_ptr->act.data
+        };
+
+        auto readonly = chain_plug->get_read_only_api();
+        auto Result = readonly.abi_bin_to_json(params);
+
+        string data_str = fc::json::to_string(Result.args);
+        action_info action_info1 = {
+                .account = action_trace_ptr->act.account,
+                .name = action_trace_ptr->act.name,
+                .authorization = action_trace_ptr->act.authorization,
+                .data_json = data_str
+        };
+
+        action_trace_ptr->act.data.resize(data_str.size());
+        action_trace_ptr->act.data.assign(data_str.begin(),data_str.end());
+        //elog("act.data=${e}",("e",action_trace_ptr->act.data));
+    }
+}
+
+void kafka_plugin_impl::filter_traction_trace(const chain::transaction_trace_ptr trace,action_name act_name){
+
+
+    vector<chain::action_trace>::iterator action_trace_ptr = trace->action_traces.begin();
+
+    for(;action_trace_ptr != trace->action_traces.end();){
+        if(action_trace_ptr->act.name == act_name){
+            _process_trace(action_trace_ptr,act_name);
+            action_trace_ptr++;
+            continue;
+        }else{
+            trace->action_traces.erase(action_trace_ptr);
+        }
+    }
 }
 
 void kafka_plugin_impl::_process_accepted_block( const chain::block_state_ptr& bs ) {
@@ -441,6 +506,8 @@ kafka_plugin_impl::~kafka_plugin_impl() {
                  "The topic for accepted transaction.")
                 ("applied_trx_topic", bpo::value<std::string>(),
                  "The topic for appiled transaction.")
+                ("transfer_trx_topic", bpo::value<std::string>(),
+                 "The topic for transfer transaction.")
                 ("kafka-uri,k", bpo::value<std::string>(),
                  "the kafka brokers uri, as 192.168.31.225:9092")
                 ("kafka-queue-size", bpo::value<uint32_t>()->default_value(256),
@@ -453,6 +520,7 @@ kafka_plugin_impl::~kafka_plugin_impl() {
     void kafka_plugin::plugin_initialize(const variables_map &options) {
         char *accept_trx_topic = NULL;
         char *applied_trx_topic = NULL;
+        char *transfer_trx_topic = NULL;
         char *brokers_str = NULL;
         try {
             if (options.count("kafka-uri")) {
@@ -466,12 +534,16 @@ kafka_plugin_impl::~kafka_plugin_impl() {
                     applied_trx_topic = (char *) (options.at("applied_trx_topic").as<std::string>().c_str());
                     elog("applied_trx_topic:${j}", ("j", applied_trx_topic));
                 }
+                if (options.count("transfer_trx_topic") != 0) {
+                    transfer_trx_topic = (char *) (options.at("transfer_trx_topic").as<std::string>().c_str());
+                    elog("transfer_trx_topic:${j}", ("j", transfer_trx_topic));
+                }
                   
-	   	  if(0!=my->producer->trx_kafka_init(brokers_str,accept_trx_topic,applied_trx_topic)){
-	   	  	elog("trx_kafka_init fail");
-	   	  }else{
-		  	elog("trx_kafka_init ok");
-		  }
+          if(0!=my->producer->trx_kafka_init(brokers_str,accept_trx_topic,applied_trx_topic,transfer_trx_topic)){
+            elog("trx_kafka_init fail");
+          }else{
+            elog("trx_kafka_init ok");
+          }
    	  }
 
             if (options.count("kafka-uri")) {
