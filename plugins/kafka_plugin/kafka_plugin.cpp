@@ -425,13 +425,6 @@ void kafka_plugin_impl::_process_trace(vector<chain::action_trace>::iterator  ac
         auto Result = readonly.abi_bin_to_json(params);
 
         string data_str = fc::json::to_string(Result.args);
-        action_info action_info1 = {
-                .account = action_trace_ptr->act.account,
-                .name = action_trace_ptr->act.name,
-                .authorization = action_trace_ptr->act.authorization,
-                .data_json = data_str
-        };
-
         action_trace_ptr->act.data.resize(data_str.size());
         action_trace_ptr->act.data.assign(data_str.begin(),data_str.end());
         //elog("act.data=${e}",("e",action_trace_ptr->act.data));
