@@ -1,10 +1,17 @@
-file(GLOB HEADERS "*.hpp")
-add_library(kafka_plugin
-        kafka_plugin.cpp kafka.cpp try_handle.cpp
-        ${HEADERS})
+#if(BUILD_KAFKA_PLUGIN)
+  file(GLOB HEADERS "include/eosio/mongo_db_plugin/*.hpp")
+  include_directories("/usr/local/include/librdkafka")
+  LINK_LIBRARIES("/usr/local/lib/librdkafka.so" "/usr/local/lib/librdkafka.so.1")
+  link_directories("/usr/local/lib")
+  add_library( kafka_plugin
+               kafka_plugin.cpp kafka_producer.cpp
+               ${HEADERS} )
+target_include_directories(kafka_plugin
+          PUBLIC "include"
+          )
+  target_link_libraries(kafka_plugin
+          PUBLIC chain_plugin eosio_chain appbase fc
+          )
 
-find_package(Cppkafka)
-find_package(RdKafka)
-
-target_include_directories(kafka_plugin PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" ${CPPKAFKA_INCLUDE_DIR})
-target_link_libraries(kafka_plugin chain_plugin appbase ${CPPKAFKA_LIBRARY} RdKafka::rdkafka)
+  message("mongo_db_plugin not selected and will be omitted.")
+#endif()
