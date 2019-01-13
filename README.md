@@ -2,11 +2,11 @@
 
 Base on version bos-v1.0.3 of TP-Lab/eos, merge https://github.com/TP-Lab/kafka_plugin
 
-+ git checkout bos-v1.0.3
-+ git checkout -b bos-kafkaplugin-v1.0.3
++ `git checkout bos-v1.0.3`
++ `git checkout -b bos-kafkaplugin-v1.0.3`
 + move the kafka_pulgin of enu: `rm -rf plugin/kafka_plugin`
 + merge the TP-Lab/kafka_plugin, see detail in https://github.com/TP-Lab/kafka_plugin
-+ git push origin bos-kafkaplugin-v1.0.3
++ `git push origin bos-kafkaplugin-v1.0.3`
 
 # TP-Lab/eos bos-v1.0.3
 
