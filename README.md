@@ -1,3 +1,16 @@
+# TP-Lab/eos bos-v1.0.3
+
+Base on version mainnet-1.3.0 of TP-Lab/eos, merge from version v1.03 of boscore/bos
+
++ `git checkout mainnet-1.3.0`
++ `git checkout -b bos-v1.0.3`
++ `git remote add bos git@github.com:boscore/bos.git`
++ `git pull bos v1.0.3`
++ fix conflict
++ `git add .;git commit -m "fix conflict";git push origin bos-v1.0.3`
++ move the kafka_pulgin of enu: `rm -rf plugin/kafka_plugin`
++ merge the TP-Lab/kafka_plugin, see detail in (https://github.com/TP-Lab/kafka_plugin)[https://github.com/TP-Lab/kafka_plugin]
+
 # BOSCore - Born for DApps. Born for Usability.
 
 ## BOSCore Version: v1.0.3
