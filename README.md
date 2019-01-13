@@ -9,7 +9,7 @@ Base on version mainnet-1.3.0 of TP-Lab/eos, merge from version v1.03 of boscore
 + fix conflict
 + `git add .;git commit -m "fix conflict";git push origin bos-v1.0.3`
 + move the kafka_pulgin of enu: `rm -rf plugin/kafka_plugin`
-+ merge the TP-Lab/kafka_plugin, see detail in (https://github.com/TP-Lab/kafka_plugin)[https://github.com/TP-Lab/kafka_plugin]
++ merge the TP-Lab/kafka_plugin, see detail in https://github.com/TP-Lab/kafka_plugin
 
 # BOSCore - Born for DApps. Born for Usability.
 
