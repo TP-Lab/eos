@@ -57,7 +57,7 @@
 	if [ "${DISK_AVAIL%.*}" -lt "${DISK_MIN}" ]; then
 		printf "\\tYou must have at least %sGB of available storage to install Enumivo.\\n" "${DISK_MIN}"
 		printf "\\tExiting now.\\n"
-		exit 1
+	#	exit 1
 	fi
 
 	DEP_ARRAY=(clang-4.0 lldb-4.0 libclang-4.0-dev cmake make automake libbz2-dev libssl-dev \
